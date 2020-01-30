@@ -1,0 +1,21 @@
+service: seed-test-users
+
+package:
+  individually: true
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: dev
+  region: sa-east-1
+
+functions:
+  hello:
+    handler: handler.hello
+    events:
+     - http:
+        path: users
+        method: get
+
+plugins:
+  - serverless-plugin-reducer

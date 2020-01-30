@@ -1,3 +1,2 @@
-# deploy-test
-
-Repository to test multiple providers of CI/CD
+# seed-test
+Repository to test the deploy of serverless services using seed
