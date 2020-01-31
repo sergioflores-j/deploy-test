@@ -25,20 +25,12 @@ pipelines:
       - step:
           name: Build and Config
           caches:
-            - npm
             - buildcache
+            - appdeps
           artifacts: # defining the artifacts to be passed to each future step.
             - app/dist/**
             - ~/.aws/credentials
           script:
-            # Tests
-            - git diff --name-only HEAD HEAD~1
-            - echo $HOME
-
-            # Creates credentials
-            - mkdir ~/.aws
-            - printf "[default]\naws_access_key_id=$AWS_KEY\naws_secret_access_key=$AWS_SECRET_KEY" > ~/.aws/credentials
-
             # Builds
             - cd app
             - npm install
@@ -49,21 +41,35 @@ pipelines:
             name: Deploy products service
             caches:
               - npm
+              - msproductsdeps
             script:
+              # Creates credentials
+              - mkdir ~/.aws
+              - printf "[default]\naws_access_key_id=$AWS_KEY\naws_secret_access_key=$AWS_SECRET_KEY" > ~/.aws/credentials
+
               # Installs
               - npm install serverless@1.61.0 -g
               - cd services/products
               - npm install
+
+              # Deploy
               - sls deploy
         - step:
             name: Deploy users service
             caches:
               - npm
+              - msusersdeps
             script:
+              # Creates credentials
+              - mkdir ~/.aws
+              - printf "[default]\naws_access_key_id=$AWS_KEY\naws_secret_access_key=$AWS_SECRET_KEY" > ~/.aws/credentials
+
               # Installs
               - npm install serverless@1.61.0 -g
               - cd services/users
               - npm install
+
+              # Deploy
               - sls deploy
 
       - step:
@@ -74,5 +80,8 @@ pipelines:
 
 definitions:
   caches:
-    npm: ~/.npm
+    npm: /usr/local/lib/node_modules
+    appdeps: $BITBUCKET_CLONE_DIR/app/node_modules
+    msusersdeps: $BITBUCKET_CLONE_DIR/services/users/node_modules
+    msproductsdeps: $BITBUCKET_CLONE_DIR/services/products/node_modules
     buildcache: $BITBUCKET_CLONE_DIR/build_cache
