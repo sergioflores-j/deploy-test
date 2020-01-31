@@ -29,7 +29,7 @@ pipelines:
             - npm
             - buildcache
           artifacts: # defining the artifacts to be passed to each future step.
-            - dist/**
+            - app/dist/**
           script:
             # Tests
             - git diff --name-only HEAD HEAD~1
@@ -72,7 +72,7 @@ pipelines:
           deployment: production
           script:
             - echo "ENVIANDO PRO S3"
-            - ls -l $BITBUCKET_CLONE_DIR/dist
+            - ls -l $BITBUCKET_CLONE_DIR/app/dist
 
 definitions:
   caches:
