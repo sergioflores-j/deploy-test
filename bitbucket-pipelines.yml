@@ -29,7 +29,7 @@ pipelines:
             - buildcache
           artifacts: # defining the artifacts to be passed to each future step.
             - app/dist/**
-            - ~/.npm/**
+            - ~/.aws/credentials
           script:
             # Tests
             - git diff --name-only HEAD HEAD~1
@@ -44,15 +44,14 @@ pipelines:
             - npm install
             - npm run build
 
-            # Installs
-            - npm install serverless@1.61.0 -g
-
       - parallel:
         - step:
             name: Deploy products service
             caches:
               - npm
             script:
+              # Installs
+              - npm install serverless@1.61.0 -g
               - cd services/products
               - npm install
               - sls deploy
@@ -61,6 +60,8 @@ pipelines:
             caches:
               - npm
             script:
+              # Installs
+              - npm install serverless@1.61.0 -g
               - cd services/users
               - npm install
               - sls deploy
