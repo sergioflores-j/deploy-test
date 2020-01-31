@@ -1,0 +1,80 @@
+image: node:12.14.1-stretch
+
+# https://confluence.atlassian.com/bitbucket/configure-bitbucket-pipelines-yml-792298910.html
+# https://confluence.atlassian.com/bitbucket/using-artifacts-in-steps-935389074.html
+# https://bitbucket-pipelines.prod.public.atl-paas.net/validator.html
+# https://community.atlassian.com/t5/Bitbucket-Pipelines-questions/Upload-only-changed-files-using-rsync-pipe/qaq-p/1163921
+# https://www.cypress.io/blog/2018/08/30/setting-up-bitbucket-pipelines-with-proper-caching-of-npm-and-cypress/
+# https://confluence.atlassian.com/bitbucket/environment-variables-794502608.html?_ga=2.95783897.492649986.1580392406-373565183.1557836944#Environmentvariables-Defaultvariables
+# https://community.atlassian.com/t5/Bitbucket-questions/How-to-reuse-steps-for-different-branches/qaq-p/875615
+
+# TODOS:
+# - Testar config dos deployments
+# - configurar variaveis de ambiente
+# - testar deploy
+# - verificar como identificar alterações no código
+# - Verificar como deixar isso sem repetir por branch (só mudando variaveis de ambiente)
+# - Verificar como ficariam os steps no PRO
+# - Verificar uma forma de adicionar um ms criado "automaticamente" no pipeline
+# - Implementar step para testes
+# - Implementar testes básicos nos ms
+
+pipelines:
+  branches:
+    master:
+      - step:
+          name: Build and Config
+          deployment: production
+          caches:
+            - npm
+            - buildcache
+          artifacts: # defining the artifacts to be passed to each future step.
+            - dist/**
+          script:
+            # Tests
+            - git diff --name-only HEAD HEAD~1
+            - echo $HOME
+
+            # Creates credentials
+            - mkdir ~/.aws
+            - printf "[default]\naws_access_key_id=$AWS_KEY\naws_secret_access_key=$AWS_SECRET_KEY" > ~/.aws/credentials
+
+            # Builds
+            - cd app
+            - npm install
+            - npm run build
+
+            # Installs
+            - npm install serverless@1.61.0 -g
+
+      - parallel:
+        - step:
+            name: Deploy products service
+            deployment: production
+            caches:
+              - npm
+            script:
+              - cd services/products
+              - npm install
+              - sls deploy
+        - step:
+            name: Deploy users service
+            deployment: production
+            caches:
+              - npm
+            script:
+              - cd services/users
+              - npm install
+              - sls deploy
+
+      - step:
+          name: Deploy APP
+          deployment: production
+          script:
+            - echo "ENVIANDO PRO S3"
+            - ls -l $BITBUCKET_CLONE_DIR/dist
+
+definitions:
+  caches:
+    npm: $BITBUCKET_CLONE_DIR/.npm
+    buildcache: $BITBUCKET_CLONE_DIR/build_cache
