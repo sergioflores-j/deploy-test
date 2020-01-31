@@ -24,7 +24,6 @@ pipelines:
     master:
       - step:
           name: Build and Config
-          deployment: production
           caches:
             - npm
             - buildcache
@@ -50,7 +49,6 @@ pipelines:
       - parallel:
         - step:
             name: Deploy products service
-            deployment: production
             caches:
               - npm
             script:
@@ -59,7 +57,6 @@ pipelines:
               - sls deploy
         - step:
             name: Deploy users service
-            deployment: production
             caches:
               - npm
             script:
@@ -69,7 +66,6 @@ pipelines:
 
       - step:
           name: Deploy APP
-          deployment: production
           script:
             - echo "ENVIANDO PRO S3"
             - ls -l $BITBUCKET_CLONE_DIR/app/dist
