@@ -29,7 +29,7 @@ pipelines:
             - buildcache
           artifacts: # defining the artifacts to be passed to each future step.
             - app/dist/**
-            - $HOME/.npm/**
+            - $BITBUCKET_CLONE_DIR/.npm/**
           script:
             # Tests
             - git diff --name-only HEAD HEAD~1
@@ -73,5 +73,5 @@ pipelines:
 
 definitions:
   caches:
-    npm: $HOME/.npm
+    npm: $BITBUCKET_CLONE_DIR/.npm
     buildcache: $BITBUCKET_CLONE_DIR/build_cache
