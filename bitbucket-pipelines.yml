@@ -1,0 +1,82 @@
+image: node:12.14.1-stretch
+
+# https://confluence.atlassian.com/bitbucket/configure-bitbucket-pipelines-yml-792298910.html
+# https://confluence.atlassian.com/bitbucket/using-artifacts-in-steps-935389074.html
+# https://bitbucket-pipelines.prod.public.atl-paas.net/validator.html
+# https://community.atlassian.com/t5/Bitbucket-Pipelines-questions/Upload-only-changed-files-using-rsync-pipe/qaq-p/1163921
+# https://www.cypress.io/blog/2018/08/30/setting-up-bitbucket-pipelines-with-proper-caching-of-npm-and-cypress/
+# https://confluence.atlassian.com/bitbucket/environment-variables-794502608.html?_ga=2.95783897.492649986.1580392406-373565183.1557836944#Environmentvariables-Defaultvariables
+# https://community.atlassian.com/t5/Bitbucket-questions/How-to-reuse-steps-for-different-branches/qaq-p/875615
+
+# TODOS:
+# - Testar config dos deployments
+# - configurar variaveis de ambiente
+# - testar deploy
+# - verificar como identificar alterações no código
+# - Verificar como deixar isso sem repetir por branch (só mudando variaveis de ambiente)
+# - Verificar como ficariam os steps no PRO
+# - Verificar uma forma de adicionar um ms criado "automaticamente" no pipeline
+# - Implementar step para testes
+# - Implementar testes básicos nos ms
+
+pipelines:
+  branches:
+    master:
+      - step:
+          name: Build and Config
+          caches:
+            - buildcache
+            - appdeps
+          artifacts: # defining the artifacts to be passed to each future step.
+            - app/dist/**
+            - ~/.aws/**
+          script:
+            # Builds
+            - cd app
+            - npm install
+            - npm run build
+
+            - mkdir ~/.aws
+            - printf "[default]\naws_access_key_id=$AWS_KEY\naws_secret_access_key=$AWS_SECRET_KEY" > ~/.aws/credentials
+
+      - parallel:
+        - step:
+            name: Deploy products service
+            caches:
+              - npm
+              - msproductsdeps
+            script:
+              # Installs
+              - npm install serverless@1.61.0 -g
+              - cd services/products
+              - npm install
+
+              # Deploy
+              - sls deploy
+        - step:
+            name: Deploy users service
+            caches:
+              - npm
+              - msusersdeps
+            script:
+              # Installs
+              - npm install serverless@1.61.0 -g
+              - cd services/users
+              - npm install
+
+              # Deploy
+              - sls deploy
+
+      - step:
+          name: Deploy APP
+          script:
+            - echo "ENVIANDO PRO S3"
+            - ls -l $BITBUCKET_CLONE_DIR/app/dist
+
+definitions:
+  caches:
+    npm: /usr/local/lib/node_modules
+    appdeps: $BITBUCKET_CLONE_DIR/app/node_modules
+    msusersdeps: $BITBUCKET_CLONE_DIR/services/users/node_modules
+    msproductsdeps: $BITBUCKET_CLONE_DIR/services/products/node_modules
+    buildcache: $BITBUCKET_CLONE_DIR/build_cache
