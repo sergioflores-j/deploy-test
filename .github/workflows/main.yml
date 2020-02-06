@@ -36,14 +36,13 @@ jobs:
 
       - name: npm install
         if: steps.cache_node_modules.outputs.cache-hit != 'true'
+        # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsrun
         run: npm install --no-progress --no-audit
-        with:
-          path: app
+        working-directory: ./app
 
       - name: build
         run: npm run build
-        with:
-          path: app
+        working-directory: ./app
 
   # deployProducts:
   #   if: "!contains(github.event.head_commit.message, '[skip-ci]')"
@@ -74,5 +73,4 @@ jobs:
         run: |
           ls
           cd dist
-        with:
-          path: app
+        working-directory: ./app
