@@ -8,8 +8,6 @@ on:
     # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#excluding-paths
     paths-ignore:
       - '!docs/**'
-
-name: Deploy master branch
 # Disponibiliza as variáveis de ambiente para todos os jobs/steps
 # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#env
 env:
