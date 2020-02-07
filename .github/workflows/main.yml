@@ -79,8 +79,9 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: build-dist
+
       - name: Test
-        run: |
-          ls
-          cd dist
-        working-directory: ./app
+        run: ls
+
+      - name: Try cd build folder
+        run: cd build-dist
