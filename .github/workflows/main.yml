@@ -65,7 +65,7 @@ jobs:
       - name: serverless deploy
         uses: serverless/github-action@v1.53.0
         with:
-          path: services/products
+          path: ./services/products
           args: deploy
 
   deployUsers:
@@ -83,7 +83,7 @@ jobs:
       - name: serverless deploy
         uses: serverless/github-action@v1.53.0
         with:
-          path: services/users
+          path: ./services/users
           args: deploy
 
   deployApp:
