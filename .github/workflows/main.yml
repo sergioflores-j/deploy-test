@@ -19,7 +19,7 @@ jobs:
   buildApp:
     # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsif
     if: "!contains(github.event.head_commit.message, '[skip-ci]')"
-    name: Build APP
+    name: Build App
     runs-on: ubuntu-latest
     steps:
       - name: Commit Checkout
@@ -50,24 +50,43 @@ jobs:
           name: build-dist
           path: app/dist
 
-  # deployProducts:
-  #   if: "!contains(github.event.head_commit.message, '[skip-ci]')"
-  #   name: Deploy Products Service 
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Commit Checkout
-  #     - uses: actions/checkout@v2
+  deployProducts:
+    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
+    name: Deploy Products Service 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Commit Checkout
+      - uses: actions/checkout@v2
 
-  #     - name: npm install
-  #       run: npm install --no-progress --no-audit
-  #       with:
-  #         path: services/products
+      - name: npm install
+        run: npm install --no-progress --no-audit
+        with:
+          path: services/products
 
-  #     - name: serverless deploy
-  #       uses: serverless/github-action@v1.53.0
-  #       with:
-  #         path: services/products
-  #         args: deploy
+      - name: serverless deploy
+        uses: serverless/github-action@v1.53.0
+        with:
+          path: services/products
+          args: deploy
+
+  deployUsers:
+    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
+    name: Deploy Users Service 
+    runs-on: ubuntu-latest
+    steps:
+      - name: Commit Checkout
+      - uses: actions/checkout@v2
+
+      - name: npm install
+        run: npm install --no-progress --no-audit
+        with:
+          path: services/users
+
+      - name: serverless deploy
+        uses: serverless/github-action@v1.53.0
+        with:
+          path: services/users
+          args: deploy
 
   deployApp:
     if: "!contains(github.event.head_commit.message, '[skip-ci]')"
