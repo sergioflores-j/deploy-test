@@ -87,6 +87,10 @@ jobs:
         if: steps.global_deps_cache.outputs.cache-hit != 'true'
         run: npm install serverless@1.61.0 -g
 
+      - name: Rebuild Global Install
+        if: steps.global_deps_cache.outputs.cache-hit == 'true'
+        run: npm rebuild
+
       - name: Cache Service dependencies
         uses: actions/cache@v1
         id: service_deps_cache
