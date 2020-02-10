@@ -61,7 +61,7 @@ jobs:
     name: Deploy Products Service 
     runs-on: ubuntu-latest
     env:
-      path: services/products/
+      path: 'services/products/'
     steps:
       - name: Commit Checkout
         uses: actions/checkout@v2
@@ -99,17 +99,17 @@ jobs:
       - name: npm install
         if: steps.cache_node_modules.outputs.cache-hit != 'true'
         run: npm install --no-progress --no-audit
-        working-directory: ${{ join('./', env.path) }}
+        working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
       - name: serverless deploy
         if: env.stage_name == ''
         run: sls deploy
-        working-directory: ${{ join('./', env.path) }}
+        working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
       - name: serverless deploy with stage
         if: env.stage_name != ''
         run: sls deploy -s ${{ env.stage_name }}
-        working-directory: ${{ join('./', env.path) }}
+        working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
   # TODO:
   # deployUsers:
