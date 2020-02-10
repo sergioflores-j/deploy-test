@@ -12,10 +12,53 @@ on:
 # Disponibiliza as variáveis de ambiente para todos os jobs/steps
 # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#env
 env:
+  AWS_STAGE: 'prod'
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-# TODO: criar "yaml" &... - >>: &...
+&serverlessDeploy reusableJob:
+  if: "!contains(github.event.head_commit.message, '[skip-ci]')"
+  name: Deploy Products Service
+  runs-on: ubuntu-latest
+  steps:
+    - name: Commit Checkout
+      uses: actions/checkout@v2
+
+    - name: Get npm cache directory
+      id: global_npm_cache_dir
+      run: |
+        echo "::set-output name=dir::$(npm config get cache)"
+
+    - name: Cache global dependencies
+      uses: actions/cache@v1
+      id: global_deps_cache
+      with:
+        path: ${{ steps.global_npm_cache_dir.outputs.dir }}
+        key: ${{ runner.os }}-v1-node-${{ '**/package-lock.json')) }}
+
+    - name: Cache Service dependencies
+      uses: actions/cache@v1
+      id: service_deps_cache
+      with:
+        # Expressions doesn't accept JSON so the expression: `join([], '')` wouldn't work
+        # path: ${{ format('{0}/{1}/{2}', '.', env.path, 'node_modules') }}
+        path: ${{ format('{0}/{1}', env.path, 'node_modules') }}
+        key: ${{ runner.os }}-v1-node-${{ hashFiles(format('{0}/{1}', env.path, 'package-lock.json')) }}
+
+    - name: npm install
+      if: steps.service_deps_cache.outputs.cache-hit != 'true'
+      run: npm ci
+      working-directory: ${{ format('{0}/{1}', '.', env.path) }}
+
+    - name: serverless deploy
+      if: env.AWS_STAGE == ''
+      run: npx sls deploy
+      working-directory: ${{ format('{0}/{1}', '.', env.path) }}
+
+    - name: serverless deploy with stage
+      if: env.AWS_STAGE != ''
+      run: npx sls deploy -s ${{ env.AWS_STAGE }}
+      working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
 # Os jobs são executados em paralelo, caso seja necessário um esperar o outro deve-se usar: `needs: nome_do_outro_job`
 # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobs
@@ -57,59 +100,57 @@ jobs:
   #         path: app/dist
 
   deployProducts:
-    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
-    name: Deploy Products Service 
-    runs-on: ubuntu-latest
+    <<: *serverlessDeploy
     env:
       path: 'services/products/'
-    steps:
-      - name: Commit Checkout
-        uses: actions/checkout@v2
+  deployUsers:
+    <<: *serverlessDeploy
+    env:
+      path: 'services/users/'
+    # if: "!contains(github.event.head_commit.message, '[skip-ci]')"
+    # name: Deploy Products Service 
+    # runs-on: ubuntu-latest
+    # env:
+    #   path: 'services/products/'
+    # steps:
+    #   - name: Commit Checkout
+    #     uses: actions/checkout@v2
 
-      # - name: Use Node.js
-      #   uses: actions/setup-node@v1.1.0
-      #   with:
-      #     version: '12.x'
+    #   - name: Get npm cache directory
+    #     id: global_npm_cache_dir
+    #     run: |
+    #       echo "::set-output name=dir::$(npm config get cache)"
 
-      - name: Get npm cache directory
-        id: global_npm_cache_dir
-        run: |
-          echo "::set-output name=dir::$(npm config get cache)"
+    #   - name: Cache global dependencies
+    #     uses: actions/cache@v1
+    #     id: global_deps_cache
+    #     with:
+    #       path: ${{ steps.global_npm_cache_dir.outputs.dir }}
+    #       key: ${{ runner.os }}-v1-node-${{ '**/package-lock.json')) }}
 
-      - name: Cache global dependencies
-        uses: actions/cache@v1
-        id: global_deps_cache
-        with:
-          path: ${{ steps.global_npm_cache_dir.outputs.dir }}
-          key: ${{ runner.os }}-v1-node-${{ '**/package-lock.json')) }}
+    #   - name: Cache Service dependencies
+    #     uses: actions/cache@v1
+    #     id: service_deps_cache
+    #     with:
+    #       # Expressions doesn't accept JSON so the expression: `join([], '')` wouldn't work
+    #       # path: ${{ format('{0}/{1}/{2}', '.', env.path, 'node_modules') }}
+    #       path: ${{ format('{0}/{1}', env.path, 'node_modules') }}
+    #       key: ${{ runner.os }}-v1-node-${{ hashFiles(format('{0}/{1}', env.path, 'package-lock.json')) }}
 
-      # - name: Global Serverless Framework Install
-      #   # if: steps.global_deps_cache.outputs.cache-hit != 'true'
-      #   run: npm install serverless@1.61.0 -g
+    #   - name: npm install
+    #     if: steps.service_deps_cache.outputs.cache-hit != 'true'
+    #     run: npm ci
+    #     working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
-      - name: Cache Service dependencies
-        uses: actions/cache@v1
-        id: service_deps_cache
-        with:
-          # Expressions doesn't accept JSON so the expression: `join([], '')` wouldn't work
-          # path: ${{ format('{0}/{1}/{2}', '.', env.path, 'node_modules') }}
-          path: ${{ format('{0}/{1}', env.path, 'node_modules') }}
-          key: ${{ runner.os }}-v1-node-${{ hashFiles(format('{0}/{1}', env.path, 'package-lock.json')) }}
+    #   - name: serverless deploy
+    #     if: env.AWS_STAGE == ''
+    #     run: npx sls deploy
+    #     working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
-      - name: npm install
-        if: steps.service_deps_cache.outputs.cache-hit != 'true'
-        run: npm ci
-        working-directory: ${{ format('{0}/{1}', '.', env.path) }}
-
-      - name: serverless deploy
-        if: env.stage_name == ''
-        run: npx sls deploy
-        working-directory: ${{ format('{0}/{1}', '.', env.path) }}
-
-      - name: serverless deploy with stage
-        if: env.stage_name != ''
-        run: npx sls deploy -s ${{ env.stage_name }}
-        working-directory: ${{ format('{0}/{1}', '.', env.path) }}
+    #   - name: serverless deploy with stage
+    #     if: env.AWS_STAGE != ''
+    #     run: npx sls deploy -s ${{ env.AWS_STAGE }}
+    #     working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
   # TODO:
   # deployUsers:
