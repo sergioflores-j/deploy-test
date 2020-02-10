@@ -8,97 +8,134 @@ on:
     # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#excluding-paths
     paths-ignore:
       - '!docs/**'
+
 # Disponibiliza as variáveis de ambiente para todos os jobs/steps
 # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#env
 env:
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+# TODO: criar "yaml" &... - >>: &...
+
 # Os jobs são executados em paralelo, caso seja necessário um esperar o outro deve-se usar: `needs: nome_do_outro_job`
 # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobs
 jobs:
-  buildApp:
-    # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsif
-    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
-    name: Build App
-    runs-on: ubuntu-latest
-    steps:
-      - name: Commit Checkout
-        uses: actions/checkout@v2
+  # TODO: refatorar
+  # buildApp:
+  #   # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsif
+  #   # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions
+  #   if: "!contains(github.event.head_commit.message, '[skip-ci]')"
+  #   name: Build App
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Commit Checkout
+  #       uses: actions/checkout@v2
 
-      - name: Cache node_modules
-        uses: actions/cache@v1
-        id: cache_node_modules
-        with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-v1-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-v1-node-${{ env.cache-name }}-
+  #     - name: Cache dependencies
+  #       uses: actions/cache@v1
+  #       id: cache_node_modules
+  #       with:
+  #         path: '**/node_modules'
+  #         key: ${{ runner.os }}-v1-node-${{ hashFiles('**/package-lock.json') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-v1-node-${{ env.cache-name }}-
 
-      - name: npm install
-        if: steps.cache_node_modules.outputs.cache-hit != 'true'
-        # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-        run: npm install --no-progress --no-audit
-        working-directory: ./app
+  #     - name: npm install
+  #       if: steps.cache_node_modules.outputs.cache-hit != 'true'
+  #       # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsrun
+  #       run: npm install --no-progress --no-audit
+  #       working-directory: ./app
 
-      - name: build
-        run: npm run build
-        working-directory: ./app
+  #     - name: build
+  #       run: npm run build
+  #       working-directory: ./app
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v1
-        with:
-          name: build-dist
-          path: app/dist
+  #     - name: Upload build artifact
+  #       uses: actions/upload-artifact@v1
+  #       with:
+  #         name: build-dist
+  #         path: app/dist
 
   deployProducts:
     if: "!contains(github.event.head_commit.message, '[skip-ci]')"
     name: Deploy Products Service 
     runs-on: ubuntu-latest
+    env:
+      path: ./services/products/
     steps:
       - name: Commit Checkout
         uses: actions/checkout@v2
 
+      - name: Get npm cache directory
+        id: global_npm_cache_dir
+        run: |
+          echo "::set-output name=dir::$(npm config get cache)"
+
+      - name: Cache global dependencies
+        uses: actions/cache@v1
+        id: global_deps_cache
+        with:
+          path: ${{ steps.global_npm_cache_dir.outputs.dir }}
+          key: ${{ runner.os }}-v1-node-global
+
+      - name: Global Serverless Framework Install
+        if: steps.global_deps_cache.outputs.cache-hit != 'true'
+        run: npm install serverless@1.61.0 -g
+
+      - name: Cache Service dependencies
+        uses: actions/cache@v1
+        id: service_deps_cache
+        with:
+          path: '${{ env.path }}node_modules'
+          key: ${{ runner.os }}-v1-node-${{ hashFiles('${{ env.path }}package-lock.json') }}
+
       - name: npm install
+        if: steps.cache_node_modules.outputs.cache-hit != 'true'
         run: npm install --no-progress --no-audit
-        working-directory: ./services/products
+        working-directory: ${{ env.path }}
 
       - name: serverless deploy
-        uses: serverless/github-action@v1.53.0
-        with:
-          path: ./services/products
-          args: deploy
+        if: env.stage_name == ""
+        run: sls deploy
+        working-directory: ${{ env.path }}
 
-  deployUsers:
-    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
-    name: Deploy Users Service 
-    runs-on: ubuntu-latest
-    steps:
-      - name: Commit Checkout
-        uses: actions/checkout@v2
+      - name: serverless deploy with stage
+        if: env.stage_name != ""
+        run: sls deploy -s ${{ env.stage_name }}
+        working-directory: ${{ env.path }}
 
-      - name: npm install
-        run: npm install --no-progress --no-audit
-        working-directory: ./services/users
+  # TODO:
+  # deployUsers:
+  #   if: "!contains(github.event.head_commit.message, '[skip-ci]')"
+  #   name: Deploy Users Service 
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Commit Checkout
+  #       uses: actions/checkout@v2
 
-      - name: serverless deploy
-        uses: serverless/github-action@v1.53.0
-        with:
-          path: ./services/users
-          args: deploy
+  #     - name: npm install
+  #       run: npm install --no-progress --no-audit
+  #       working-directory: ./services/users
 
-  deployApp:
-    if: "!contains(github.event.head_commit.message, '[skip-ci]')"
-    needs: buildApp
-    name: Deploy App 
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download app build artifact
-        uses: actions/download-artifact@v1
-        with:
-          name: build-dist
+  #     - name: serverless deploy
+  #       uses: serverless/github-action@v1.53.0
+  #       with:
+  #         path: ./services/users
+  #         args: deploy
 
-      - name: Test
-        run: ls
+  # deployApp:
+  #   if: "!contains(github.event.head_commit.message, '[skip-ci]')"
+  #   needs: buildApp
+  #   name: Deploy App 
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Download app build artifact
+  #       uses: actions/download-artifact@v1
+  #       with:
+  #         name: build-dist
 
-      - name: Try cd build folder
-        run: cd build-dist
+  #     - name: Test
+  #       run: ls
+
+  #     - name: Try cd build folder
+  #       run: cd build-dist
