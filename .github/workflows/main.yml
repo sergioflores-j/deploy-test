@@ -103,12 +103,12 @@ jobs:
 
       - name: serverless deploy
         if: env.stage_name == ''
-        run: sls deploy
+        run: npx sls deploy
         working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
       - name: serverless deploy with stage
         if: env.stage_name != ''
-        run: sls deploy -s ${{ env.stage_name }}
+        run: npx sls deploy -s ${{ env.stage_name }}
         working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
   # TODO:
