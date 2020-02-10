@@ -66,29 +66,26 @@ jobs:
       - name: Commit Checkout
         uses: actions/checkout@v2
 
-      - name: Use Node.js
-        uses: actions/setup-node@v1.1.0
-        with:
-          version: '12.x'
+      # - name: Use Node.js
+      #   uses: actions/setup-node@v1.1.0
+      #   with:
+      #     version: '12.x'
 
-      # - name: Get npm cache directory
-      #   id: global_npm_cache_dir
-      #   run: |
-      #     echo "::set-output name=dir::$(npm config get cache)"
+      - name: Get npm cache directory
+        id: global_npm_cache_dir
+        run: |
+          echo "::set-output name=dir::$(npm config get cache)"
 
       - name: Cache global dependencies
         uses: actions/cache@v1
         id: global_deps_cache
         with:
-          # path: ${{ steps.global_npm_cache_dir.outputs.dir }}
-          path: ~/.npm
+          path: ${{ steps.global_npm_cache_dir.outputs.dir }}
           key: ${{ runner.os }}-v1-node-global
 
-      - name: Global Serverless Framework Install
-        # if: steps.global_deps_cache.outputs.cache-hit != 'true'
-        run: |
-          npm root -g
-          npm install serverless@1.61.0 -g
+      # - name: Global Serverless Framework Install
+      #   # if: steps.global_deps_cache.outputs.cache-hit != 'true'
+      #   run: npm install serverless@1.61.0 -g
 
       - name: Cache Service dependencies
         uses: actions/cache@v1
