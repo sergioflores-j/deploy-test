@@ -61,7 +61,7 @@ jobs:
     name: Deploy Products Service 
     runs-on: ubuntu-latest
     env:
-      path: ./services/products/
+      path: services/products/
     steps:
       - name: Commit Checkout
         uses: actions/checkout@v2
@@ -91,23 +91,23 @@ jobs:
         uses: actions/cache@v1
         id: service_deps_cache
         with:
-          path: ${{ join(env.path, 'node_modules') }}
+          path: ${{ join('./', env.path, 'node_modules') }}
           key: ${{ runner.os }}-v1-node-${{ hashFiles(join(env.path, 'package-lock.json')) }}
 
       - name: npm install
         if: steps.cache_node_modules.outputs.cache-hit != 'true'
         run: npm install --no-progress --no-audit
-        working-directory: ${{ env.path }}
+        working-directory: ${{ join('./', env.path) }}
 
       - name: serverless deploy
         if: env.stage_name == ''
         run: sls deploy
-        working-directory: ${{ env.path }}
+        working-directory: ${{ join('./', env.path) }}
 
       - name: serverless deploy with stage
         if: env.stage_name != ''
         run: sls deploy -s ${{ env.stage_name }}
-        working-directory: ${{ env.path }}
+        working-directory: ${{ join('./', env.path) }}
 
   # TODO:
   # deployUsers:
