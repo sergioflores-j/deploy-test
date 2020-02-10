@@ -95,12 +95,12 @@ jobs:
         working-directory: ${{ env.path }}
 
       - name: serverless deploy
-        if: env.stage_name == ""
+        if: env.stage_name == ''
         run: sls deploy
         working-directory: ${{ env.path }}
 
       - name: serverless deploy with stage
-        if: env.stage_name != ""
+        if: env.stage_name != ''
         run: sls deploy -s ${{ env.stage_name }}
         working-directory: ${{ env.path }}
 
