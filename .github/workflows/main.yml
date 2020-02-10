@@ -91,7 +91,8 @@ jobs:
         uses: actions/cache@v1
         id: service_deps_cache
         with:
-          path: ${{ join(['./', env.path], 'node_modules') }}
+          # Expressions doesn't accept JSON so the expression: `join([], '')` wouldn't work
+          path: ${{ format('{0}/{1}/{2}', '.', env.path, 'node_modules') }}
           key: ${{ runner.os }}-v1-node-${{ hashFiles(join(env.path, 'package-lock.json')) }}
 
       - name: npm install
