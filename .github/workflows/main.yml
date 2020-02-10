@@ -91,8 +91,8 @@ jobs:
         uses: actions/cache@v1
         id: service_deps_cache
         with:
-          path: '${{ env.path }}node_modules'
-          key: ${{ runner.os }}-v1-node-${{ hashFiles('${{ env.path }}package-lock.json') }}
+          path: ${{ env.path }} + 'node_modules'
+          key: ${{ runner.os }}-v1-node-${{ hashFiles(env.path + 'package-lock.json') }}
 
       - name: npm install
         if: steps.cache_node_modules.outputs.cache-hit != 'true'
