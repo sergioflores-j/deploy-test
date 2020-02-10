@@ -81,7 +81,7 @@ jobs:
         id: global_deps_cache
         with:
           path: ${{ steps.global_npm_cache_dir.outputs.dir }}
-          key: ${{ runner.os }}-v1-node-global
+          key: ${{ runner.os }}-v1-node-${{ '**/package-lock.json')) }}
 
       # - name: Global Serverless Framework Install
       #   # if: steps.global_deps_cache.outputs.cache-hit != 'true'
