@@ -10,5 +10,8 @@
   "license": "ISC",
   "devDependencies": {
     "serverless-plugin-reducer": "^3.2.3"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.614.0"
   }
 }

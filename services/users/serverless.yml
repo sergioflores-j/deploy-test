@@ -1,4 +1,4 @@
-service: seed-test-users
+service: deploy-test-users
 
 package:
   individually: true
