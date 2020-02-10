@@ -86,7 +86,9 @@ jobs:
 
       - name: Global Serverless Framework Install
         # if: steps.global_deps_cache.outputs.cache-hit != 'true'
-        run: npm install serverless@1.61.0 -g
+        run: |
+          export PATH=$PATH:~/.npm/commands
+          npm install serverless@1.61.0 -g
 
       - name: Cache Service dependencies
         uses: actions/cache@v1
