@@ -69,18 +69,19 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v1.1.0
         with:
-          node-version: '12.x'
+          version: '12.x'
 
-      - name: Get npm cache directory
-        id: global_npm_cache_dir
-        run: |
-          echo "::set-output name=dir::$(npm config get cache)"
+      # - name: Get npm cache directory
+      #   id: global_npm_cache_dir
+      #   run: |
+      #     echo "::set-output name=dir::$(npm config get cache)"
 
       - name: Cache global dependencies
         uses: actions/cache@v1
         id: global_deps_cache
         with:
-          path: ${{ steps.global_npm_cache_dir.outputs.dir }}
+          # path: ${{ steps.global_npm_cache_dir.outputs.dir }}
+          path: ~/.npm
           key: ${{ runner.os }}-v1-node-global
 
       - name: Global Serverless Framework Install
