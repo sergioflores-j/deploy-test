@@ -100,7 +100,7 @@ jobs:
           key: ${{ runner.os }}-v1-node-${{ hashFiles(format('{0}/{1}', env.path, 'package-lock.json')) }}
 
       - name: npm install
-        if: steps.cache_node_modules.outputs.cache-hit != 'true'
+        if: steps.service_deps_cache.outputs.cache-hit != 'true'
         run: npm ci
         working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
