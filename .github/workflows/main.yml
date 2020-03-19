@@ -92,11 +92,11 @@ jobs:
         if: steps.cache_node_modules.outputs.cache-hit != 'true'
         # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsrun
         run: npm install --no-progress --no-audit
-        working-directory: env.path
+        working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
       - name: build
         run: npm run build
-        working-directory: env.path
+        working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v1
