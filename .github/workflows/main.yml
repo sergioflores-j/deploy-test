@@ -73,34 +73,36 @@ jobs:
     if: "!contains(github.event.head_commit.message, '[skip-ci]')"
     name: Build App
     runs-on: ubuntu-latest
+    env:
+      path: 'app'
     steps:
       - name: Commit Checkout
         uses: actions/checkout@v2
 
       - name: Cache dependencies
         uses: actions/cache@v1
-        id: cache_node_modules
+        id: service_deps_cache
         with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-v1-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-v1-node-${{ env.cache-name }}-
+          # Expressions doesn't accept JSON so the expression: `join([], '')` wouldn't work
+          # path: ${{ format('{0}/{1}/{2}', '.', env.path, 'node_modules') }}
+          path: ${{ format('{0}/{1}', env.path, 'node_modules') }}
+          key: ${{ runner.os }}-v1-node-${{ hashFiles(format('{0}/{1}', env.path, 'package-lock.json')) }}
 
       - name: npm install
         if: steps.cache_node_modules.outputs.cache-hit != 'true'
         # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsrun
         run: npm install --no-progress --no-audit
-        working-directory: ./app
+        working-directory: env.path
 
       - name: build
         run: npm run build
-        working-directory: ./app
+        working-directory: env.path
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v1
         with:
           name: build-dist
-          path: app/dist
+          path: ${{ format('{0}/{1}', env.path, 'dist') }}
 
   deployProducts:
     if: "!contains(github.event.head_commit.message, '[skip-ci]')"
