@@ -19,54 +19,6 @@ env:
 # Os jobs são executados em paralelo, caso seja necessário um esperar o outro deve-se usar: `needs: nome_do_outro_job`
 # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobs
 jobs:
-  # reusableJob: &serverlessDeploy
-  #   if: "!contains(github.event.head_commit.message, '[skip-ci]')"
-  #   name: Deploy Products Service
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Commit Checkout
-  #       if: env.path != ''
-  #       uses: actions/checkout@v2
-
-  #     - name: Get npm cache directory
-  #       if: env.path != ''
-  #       id: global_npm_cache_dir
-  #       run: |
-  #         echo "::set-output name=dir::$(npm config get cache)"
-
-  #     - name: Cache global dependencies
-  #       if: env.path != ''
-  #       uses: actions/cache@v1
-  #       id: global_deps_cache
-  #       with:
-  #         path: ${{ steps.global_npm_cache_dir.outputs.dir }}
-  #         key: ${{ runner.os }}-v1-node-${{ '**/package-lock.json')) }}
-
-  #     - name: Cache Service dependencies
-  #       if: env.path != ''
-  #       uses: actions/cache@v1
-  #       id: service_deps_cache
-  #       with:
-  #         # Expressions doesn't accept JSON so the expression: `join([], '')` wouldn't work
-  #         # path: ${{ format('{0}/{1}/{2}', '.', env.path, 'node_modules') }}
-  #         path: ${{ format('{0}/{1}', env.path, 'node_modules') }}
-  #         key: ${{ runner.os }}-v1-node-${{ hashFiles(format('{0}/{1}', env.path, 'package-lock.json')) }}
-
-  #     - name: npm install
-  #       if: steps.service_deps_cache.outputs.cache-hit != 'true' && env.path != ''
-  #       run: npm ci
-  #       working-directory: ${{ format('{0}/{1}', '.', env.path) }}
-
-  #     - name: serverless deploy
-  #       if: env.AWS_STAGE == '' && env.path != ''
-  #       run: npx sls deploy
-  #       working-directory: ${{ format('{0}/{1}', '.', env.path) }}
-
-  #     - name: serverless deploy with stage
-  #       if: env.AWS_STAGE != '' && env.path != ''
-  #       run: npx sls deploy -s ${{ env.AWS_STAGE }}
-  #       working-directory: ${{ format('{0}/{1}', '.', env.path) }}
-  # TODO: refatorar
   buildApp:
     # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsif
     # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions
@@ -91,7 +43,7 @@ jobs:
       - name: npm install
         if: steps.cache_node_modules.outputs.cache-hit != 'true'
         # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-        run: npm install --no-progress --no-audit
+        run: npm ci
         working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
       - name: build
@@ -104,12 +56,19 @@ jobs:
           name: build-dist
           path: ${{ format('{0}/{1}', env.path, 'dist') }}
 
-  deployProducts:
+  deployServices:
     if: "!contains(github.event.head_commit.message, '[skip-ci]')"
-    name: Deploy Products Service
+    # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstrategymatrix
+    strategy:
+      matrix:
+        service: [
+          products,
+          users,
+        ]
+    name: Deploy ${{ matrix.service }} Service
     runs-on: ubuntu-latest
     env:
-      path: 'services/products/'
+      path: 'services/${{ matrix.service }}/'
     steps:
       - name: Commit Checkout
         if: env.path != ''
@@ -154,30 +113,9 @@ jobs:
         run: npx sls deploy -s ${{ env.AWS_STAGE }}
         working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
-  # TODO:
-  # deployUsers:
-  #   if: "!contains(github.event.head_commit.message, '[skip-ci]')"
-  #   name: Deploy Users Service 
-  #   runs-on: ubuntu-latest
-  #   env:
-  #     path: 'services/users/'
-  #   steps:
-  #     - name: Commit Checkout
-  #       uses: actions/checkout@v2
-
-  #     - name: npm install
-  #       run: npm install --no-progress --no-audit
-  #       working-directory: ./services/users
-
-  #     - name: serverless deploy
-  #       uses: serverless/github-action@v1.53.0
-  #       with:
-  #         path: ./services/users
-  #         args: deploy
-
   deployApp:
     if: "!contains(github.event.head_commit.message, '[skip-ci]')"
-    needs: buildApp
+    needs: [buildApp, deployProducts]
     name: Deploy App 
     runs-on: ubuntu-latest
     steps:
