@@ -49,7 +49,7 @@ jobs:
         working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
       - name: build
-        run: npm run build
+        # run: npm run build
         working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
       - name: Upload build artifact
