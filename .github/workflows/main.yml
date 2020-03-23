@@ -7,10 +7,10 @@ on:
       - stage
     # Não roda CI se tiver apenas alterações nas pastas listadas
     # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#excluding-paths
-    paths:
-      - '!docs/**'
-      - '!**/*.md'
-      - '!*.md'
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '*.md'
 
 # Disponibiliza as variáveis de ambiente para todos os jobs/steps
 # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#env
