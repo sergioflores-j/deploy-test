@@ -24,6 +24,12 @@ jobs:
     name: Setup Variables
     runs-on: ubuntu-latest
     steps: 
+      - name: test
+        run: |
+          ls
+          ls .github
+          ls .github/scripts
+
       - name: Load AWS environment
         id: aws
         run: .github/scripts/load-aws-env.sh ${GITHUB_REF#refs/heads/} '${{ toJson(secrets) }}'
