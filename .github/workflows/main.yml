@@ -24,11 +24,8 @@ jobs:
     name: Setup Variables
     runs-on: ubuntu-latest
     steps: 
-      - name: test
-        run: |
-          ls
-          ls .github
-          ls .github/scripts
+      - name: Checkout Code
+        uses: actions/checkout@v2
 
       - name: Load AWS environment
         id: aws
@@ -164,6 +161,9 @@ jobs:
     name: Deploy App 
     runs-on: ubuntu-latest
     steps:
+      - name: Commit Checkout
+        uses: actions/checkout@v2
+
       - name: Download app build artifact
         uses: actions/download-artifact@v1
         with:
