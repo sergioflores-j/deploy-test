@@ -7,7 +7,7 @@ on:
       - stage
     # Não roda CI se tiver apenas alterações nas pastas listadas
     # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#excluding-paths
-    paths-ignore:
+    paths:
       - '!docs/**'
       - '!**/*.md'
       - '!*.md'
