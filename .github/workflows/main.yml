@@ -1,9 +1,10 @@
-name: Production Deploy
+name: deploy
 
 on:
   push:
     branches:
       - master
+      - stage
     # Não roda CI se tiver apenas alterações nas pastas listadas
     # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#excluding-paths
     paths-ignore:
@@ -12,7 +13,6 @@ on:
 # Disponibiliza as variáveis de ambiente para todos os jobs/steps
 # https://help.github.com/en/actions/automating-your-workflow-with-github-actions/workflow-syntax-for-github-actions#env
 env:
-  AWS_STAGE: 'prod'
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
@@ -59,6 +59,7 @@ jobs:
   deployServices:
     if: "!contains(github.event.head_commit.message, '[skip-ci]')"
     # https://help.github.com/en/actions/reference/workflow-syntax-for-github-actions#jobsjob_idstrategymatrix
+    # Job matrix - A job matrix can generate a maximum of 256 jobs per workflow run. This limit also applies to self-hosted runners.
     strategy:
       matrix:
         service: [
@@ -103,14 +104,25 @@ jobs:
         run: npm ci
         working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
+      - name: Load AWS environment
+        id: aws
+        run: .github/scripts/load-aws-env.sh ${GITHUB_REF#refs/heads/} '${{ toJson(secrets) }}'
+
+      - name: Set up AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ steps.aws.outputs.aws_key }}
+          aws-secret-access-key: ${{ steps.aws.outputs.aws_secret }}
+          aws-region: ${{ steps.aws.outputs.aws_region }}
+
       - name: serverless deploy
-        if: env.AWS_STAGE == '' && env.path != ''
+        if: steps.aws.outputs.aws_stage == '' && env.path != ''
         run: npx sls deploy
         working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
       - name: serverless deploy with stage
-        if: env.AWS_STAGE != '' && env.path != ''
-        run: npx sls deploy -s ${{ env.AWS_STAGE }}
+        if: steps.aws.outputs.aws_stage != '' && env.path != ''
+        run: npx sls deploy -s ${{ steps.aws.outputs.aws_stage }}
         working-directory: ${{ format('{0}/{1}', '.', env.path) }}
 
   deployApp:
