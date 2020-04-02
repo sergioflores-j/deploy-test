@@ -11,6 +11,8 @@ module.exports.hello = async (event, context) => {
         { id: 1, name: 'João' },
         { id: 2, name: 'Maria' },
       ],
+      input: event,
+      context: context,
     })
   };
 };
